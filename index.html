@@ -127,6 +127,20 @@
         .end-box h2 { font-size: 3rem; color: #ff007f; margin-bottom: 15px; text-shadow: 2px 2px 0px #fff; }
         .end-box p { font-size: 1.8rem; margin-bottom: 30px; color: #333; font-weight: bold; }
 
+        .end-box { max-height: 95vh; overflow-y: auto; padding: 1.5rem 2rem; max-width: 92%; }
+        .end-box h2 { font-size: 2.2rem; }
+        .end-box p { font-size: 1.3rem; margin-bottom: 15px; }
+        .end-graphics { font-size: 3rem; margin-bottom: 10px; }
+
+        /* --- Leaderboard --- */
+        .leaderboard { margin: 0 auto 20px; min-width: 260px; max-width: 360px; background: rgba(255,255,255,0.7); border-radius: 15px; padding: 10px 14px; }
+        .leaderboard h3 { color: #ff007f; font-size: 1.2rem; margin-bottom: 8px; }
+        .lb-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; border-radius: 8px; font-size: 1.05rem; color: #333; }
+        .lb-row:nth-child(even) { background: rgba(161,140,209,0.15); }
+        .lb-row.me { background: #fff3a0; font-weight: bold; }
+        .lb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%; }
+        .lb-msg { font-size: 1rem; color: #555; padding: 6px; }
+
         /* Animations */
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
         @keyframes flyRight { 0% { transform: translateX(-100vw) scaleX(-1); } 100% { transform: translateX(100vw) scaleX(-1); } }
@@ -138,9 +152,6 @@
         @keyframes floatUpFade { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-80px) scale(1.5); opacity: 0; } }
         @keyframes rise { 0% { bottom: -50px; transform: translateX(0); } 50% { transform: translateX(50px); } 100% { bottom: 110vh; transform: translateX(-50px); } }
     </style>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -188,25 +199,15 @@
             <div class="end-graphics">🛸 🚀 🚜</div>
             <h2>پایان بازی!</h2>
             <p id="final-message"></p>
+            <div class="leaderboard">
+                <h3>🏆 برترین‌ها</h3>
+                <div id="leaderboard-list"><div class="lb-msg">در حال بارگذاری...</div></div>
+            </div>
             <button onclick="resetGame()">دوباره بازی کن 🔄</button>
         </div>
     </div>
 
     <script>
-
-        // --- اتصال Firebase ---
-        const firebaseConfig = {
-          apiKey: "AIzaSyCC3uSVkAlKmpqevUG3-7epgKP_JoAVt0I",
-          authDomain: "tank-game-f0c38.firebaseapp.com",
-          databaseURL: "https://tank-game-f0c38-default-rtdb.firebaseio.com",
-          projectId: "tank-game-f0c38",
-          storageBucket: "tank-game-f0c38.firebasestorage.app",
-          messagingSenderId: "316673219546",
-          appId: "1:316673219546:web:6012f3a5b4c662e2a8bee3"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -412,17 +413,10 @@
             else msgEl.innerText = `خوب بود ${playerName}! می‌تونی بازم تمرین کنی. امتیاز تو: ${score.toLocaleString('fa-IR')}`;
             createBubbles();
 
-            // ذخیره نتیجه در Firebase
-            database.ref("tankGameResults").push({
-                name: playerName,
-                score: score,
-                date: new Date().toLocaleString("fa-IR")
-            }).then(() => {
-                msgEl.innerText += "\n\n✅ اطلاعات بازی ذخیره شد";
-            }).catch((error) => {
-                console.error("Firebase Error:", error);
-                msgEl.innerText += "\n\n❌ ذخیره اطلاعات انجام نشد";
-            });
+            // ذخیره نام و امتیاز در Firebase و نمایش جدول برترین‌ها
+            document.getElementById('leaderboard-list').innerHTML = '<div class="lb-msg">در حال بارگذاری...</div>';
+            if (window.fbSaveScore) window.fbSaveScore(playerName, score);
+            else document.getElementById('leaderboard-list').innerHTML = '<div class="lb-msg">اتصال به جدول امتیازات برقرار نشد.</div>';
         }
 
         function resetGame() {
@@ -441,6 +435,70 @@
                 container.appendChild(b);
             }
         }
+    </script>
+
+    <script>
+        // ذخیره و خواندن امتیاز از طریق /api/scores (واسطه روی Vercel) بدون ارتباط مستقیم مرورگر با Firebase
+        (function () {
+            const listEl = document.getElementById('leaderboard-list');
+
+            function showMessage(text) {
+                listEl.innerHTML = '';
+                const d = document.createElement('div');
+                d.className = 'lb-msg';
+                d.textContent = text;
+                listEl.appendChild(d);
+            }
+
+            function renderLeaderboard(rows, myKey) {
+                listEl.innerHTML = '';
+                if (!rows.length) { showMessage('هنوز امتیازی ثبت نشده.'); return; }
+                rows.forEach((r, i) => {
+                    const row = document.createElement('div');
+                    row.className = 'lb-row' + (r.key === myKey ? ' me' : '');
+                    const name = document.createElement('span');
+                    name.className = 'lb-name';
+                    name.textContent = (i + 1).toLocaleString('fa-IR') + '. ' + r.name;
+                    const sc = document.createElement('span');
+                    sc.textContent = Number(r.score).toLocaleString('fa-IR');
+                    row.appendChild(name);
+                    row.appendChild(sc);
+                    listEl.appendChild(row);
+                });
+            }
+
+            async function api(options) {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), 10000);
+                try {
+                    const r = await fetch('/api/scores', { ...options, signal: ctrl.signal });
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return await r.json();
+                } finally { clearTimeout(t); }
+            }
+
+            window.fbSaveScore = async function (name, score) {
+                let myKey = null;
+                try {
+                    const out = await api({
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: String(name), score: Number(score) })
+                    });
+                    myKey = out.key;
+                } catch (err) {
+                    console.error('خطا در ذخیره امتیاز:', err);
+                    showMessage('ذخیره امتیاز انجام نشد: ' + (err.name === 'AbortError' ? 'زمان اتصال تمام شد' : err.message));
+                    return;
+                }
+                try {
+                    renderLeaderboard(await api({ method: 'GET' }), myKey);
+                } catch (err) {
+                    console.error('خطا در خواندن جدول:', err);
+                    showMessage('امتیاز ذخیره شد، اما جدول بارگذاری نشد.');
+                }
+            };
+        })();
     </script>
 </body>
 </html>
