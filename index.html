@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ماجراجویی من و تانک</title>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            overscroll-behavior: none;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .active { display: flex; }
+
+        /* --- Screen 1: Welcome --- */
+        #screen-welcome {
+            background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
+            position: relative;
+        }
+        
+        .sky-elements { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .s1-moon { position: absolute; top: 10%; right: 10%; font-size: 5rem; animation: float 4s ease-in-out infinite; }
+        .s1-rainbow { position: absolute; top: 5%; left: 5%; font-size: 6rem; opacity: 0.8; }
+        .s1-bird1 { position: absolute; top: 20%; left: 30%; font-size: 2rem; animation: flyRight 10s linear infinite; }
+        .s1-bird2 { position: absolute; top: 30%; left: 10%; font-size: 2.5rem; animation: flyRight 15s linear infinite 2s; }
+        .s1-star { position: absolute; font-size: 1.5rem; animation: twinkle 2s infinite alternate; }
+
+        .welcome-box {
+            background: rgba(255, 255, 255, 0.9); padding: 2rem; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; z-index: 10; max-width: 90%;
+            backdrop-filter: blur(12px);
+        }
+
+        .welcome-box h1 { color: #ff5e62; font-size: 2.5rem; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
+        .welcome-box p { color: #333; font-size: 1.2rem; margin-bottom: 20px; }
+        .welcome-box input {
+            padding: 10px; font-size: 1.2rem; border: 2px solid #4facfe; border-radius: 10px; text-align: center; margin-bottom: 15px; width: 100%; font-family: 'Vazirmatn';
+        }
+        
+        button {
+            padding: 12px 30px; font-size: 1.3rem; border: none; border-radius: 15px; cursor: pointer;
+            background: linear-gradient(to right, #ff5e62, #ff9966);
+            color: white; font-family: 'Vazirmatn', sans-serif; font-weight: bold;
+            box-shadow: 0 5px 15px rgba(255, 94, 98, 0.4); transition: transform 0.2s; z-index: 20;
+        }
+        button:active { transform: scale(0.95); }
+
+        /* --- Screen 2: Game --- */
+        #screen-game { background: linear-gradient(to bottom, #020111 0%, #20124d 100%); position: relative; }
+
+        .glowing-stars {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            background-image: radial-gradient(2px 2px at 20px 30px, #fff, rgba(0,0,0,0)), radial-gradient(3px 3px at 40px 70px, #ffd700, rgba(0,0,0,0)), radial-gradient(2px 2px at 50px 160px, #fff, rgba(0,0,0,0)), radial-gradient(3px 3px at 90px 40px, #00ffff, rgba(0,0,0,0)), radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)), radial-gradient(2px 2px at 160px 120px, #ffcc00, rgba(0,0,0,0));
+            background-repeat: repeat; background-size: 250px 250px; animation: twinkleBg 2s infinite alternate; filter: drop-shadow(0 0 5px white);
+        }
+
+        .shooting-star { position: absolute; width: 4px; height: 4px; background: white; border-radius: 50%; box-shadow: 0 0 10px 2px white, -10px 0 20px 2px white; animation: shootingStar 6s linear infinite; top: 0; left: -20%; }
+        .game-moon { position: absolute; font-size: 4rem; top: 10%; right: -10%; animation: moveMoon 30s linear infinite; }
+
+        .ground { position: absolute; bottom: 0; left: 0; width: 100%; height: 15vh; background: linear-gradient(to bottom, #5c4033, #3e2723); border-top-left-radius: 50% 20px; border-top-right-radius: 50% 20px; }
+
+        .game-ui { position: absolute; top: 10px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 10px; z-index: 10; }
+        .score-board { font-size: 1.5rem; font-weight: bold; background: rgba(0,0,0,0.5); padding: 5px 20px; border-radius: 15px; color: white; border: 1px solid rgba(255,255,255,0.3); }
+        
+        .guide-box {
+            background: rgba(255, 255, 255, 0.95);
+            border: 3px solid #ff00ff;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.8), inset 0 0 10px rgba(0,255,255,0.3);
+            color: #111;
+            padding: 8px 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            max-width: 95%;
+        }
+
+        .tank-container { position: absolute; bottom: 5vh; left: 50%; transform: translateX(-50%); width: 100px; height: 80px; z-index: 5; }
+        .tank-body { position: absolute; bottom: 0; width: 100%; height: 40px; background: #4caf50; border-radius: 10px 10px 5px 5px; box-shadow: inset 0 -5px 10px rgba(0,0,0,0.5); }
+        .tank-wheels { position: absolute; bottom: -10px; width: 110%; left: -5%; height: 20px; background: #222; border-radius: 10px; }
+        .tank-turret-base { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); width: 50px; height: 30px; background: #388e3c; border-radius: 25px 25px 0 0; }
+        .tank-barrel { position: absolute; bottom: 55px; left: 50%; width: 10px; height: 60px; background: #2e7d32; transform-origin: bottom center; transform: translateX(-50%) rotate(0deg); transition: transform 0.1s; }
+
+        .bullet { position: absolute; width: 10px; height: 20px; background: #ffeb3b; border-radius: 50%; box-shadow: 0 0 10px #ffeb3b; z-index: 4; }
+
+        .ufo { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 3; }
+        .ufo-emoji { font-size: 4rem; filter: drop-shadow(0 0 15px rgba(0,255,255,0.8)); animation: floatUfo 2s infinite alternate; }
+        .ufo-word { position: absolute; top: 40%; background: rgba(255, 255, 255, 0.95); color: #000; padding: 2px 10px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; border: 2px solid #ff00ff; box-shadow: 0 0 10px rgba(255,0,255,0.5); pointer-events: none; white-space: nowrap; }
+
+        .star-particle { position: absolute; font-size: 1.5rem; pointer-events: none; z-index: 10; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        .feedback-msg { position: absolute; font-size: 2.5rem; font-weight: bold; text-shadow: 2px 2px 10px #000; z-index: 15; pointer-events: none; animation: floatUpFade 1s forwards; }
+
+        /* --- Screen 3: End --- */
+        #screen-end { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); position: relative; overflow: hidden; }
+        .bubbles-container { position: absolute; top:0; left:0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .bubble { position: absolute; bottom: -50px; background: rgba(255, 255, 255, 0.4); border-radius: 50%; animation: rise infinite ease-in; }
+        
+        .end-box { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); padding: 3rem; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); text-align: center; z-index: 10; border: 2px solid white; }
+        .end-graphics { font-size: 4rem; margin-bottom: 20px; animation: float 3s infinite ease-in-out; }
+        .end-box h2 { font-size: 3rem; color: #ff007f; margin-bottom: 15px; text-shadow: 2px 2px 0px #fff; }
+        .end-box p { font-size: 1.8rem; margin-bottom: 30px; color: #333; font-weight: bold; }
+
+        /* Animations */
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
+        @keyframes flyRight { 0% { transform: translateX(-100vw) scaleX(-1); } 100% { transform: translateX(100vw) scaleX(-1); } }
+        @keyframes twinkle { 0% { opacity: 0.3; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
+        @keyframes twinkleBg { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes shootingStar { 0% { transform: translate(0,0) rotate(45deg); opacity: 1; } 20% { transform: translate(120vw, 120vh) rotate(45deg); opacity: 0; } 100% { opacity: 0; } }
+        @keyframes moveMoon { 0% { right: -10%; top: 20%; } 50% { top: 5%; } 100% { right: 110%; top: 20%; } }
+        @keyframes floatUfo { 0% { transform: translateY(-5px); } 100% { transform: translateY(5px); } }
+        @keyframes floatUpFade { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-80px) scale(1.5); opacity: 0; } }
+        @keyframes rise { 0% { bottom: -50px; transform: translateX(0); } 50% { transform: translateX(50px); } 100% { bottom: 110vh; transform: translateX(-50px); } }
+    </style>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <div id="screen-welcome" class="screen active">
+        <div class="sky-elements">
+            <div class="s1-moon">🌙</div><div class="s1-rainbow">🌈</div>
+            <div class="s1-bird1">🐦</div><div class="s1-bird2">🦅</div>
+            <div class="s1-star" style="top: 15%; left: 80%;">✨</div>
+            <div class="s1-star" style="top: 40%; left: 20%; animation-delay: 1s;">✨</div>
+            <div class="s1-star" style="top: 10%; left: 40%; animation-delay: 0.5s;">✨</div>
+        </div>
+        <div class="welcome-box">
+            <h1>ماجراجویی من و تانک</h1>
+            <p>طراح وآموزگار: فاطمه محمدپور</p>
+            <input type="text" id="player-name" placeholder="نام خود را وارد کن..." autocomplete="off">
+            <br>
+            <button onclick="startGame()">شروع ماجراجویی 🚀</button>
+        </div>
+    </div>
+
+    <div id="screen-game" class="screen" onpointerdown="aimTank(event)" onpointermove="aimTank(event)" onpointerup="fireBullet()">
+        <div class="glowing-stars"></div>
+        <div class="shooting-star"></div>
+        <div class="game-moon">🌕</div>
+        
+        <div class="game-ui">
+            <div class="guide-box">با حرکت دادن تانک با انگشت به طرف کلمه درست شلیک کن</div>
+            <div class="score-board">امتیاز: <span id="score">۰</span></div>
+        </div>
+        
+        <div id="game-area" style="position: absolute; top:0; left:0; width:100%; height:100%; overflow: hidden; pointer-events: none;"></div>
+        <div class="ground"></div>
+        
+        <div class="tank-container">
+            <div class="tank-barrel" id="tank-barrel"></div>
+            <div class="tank-turret-base"></div>
+            <div class="tank-body"></div>
+            <div class="tank-wheels"></div>
+        </div>
+    </div>
+
+    <div id="screen-end" class="screen">
+        <div class="bubbles-container" id="bubbles-container"></div>
+        <div class="end-box">
+            <div class="end-graphics">🛸 🚀 🚜</div>
+            <h2>پایان بازی!</h2>
+            <p id="final-message"></p>
+            <button onclick="resetGame()">دوباره بازی کن 🔄</button>
+        </div>
+    </div>
+
+    <script>
+
+        // --- اتصال Firebase ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCC3uSVkAlKmpqevUG3-7epgKP_JoAVt0I",
+          authDomain: "tank-game-f0c38.firebaseapp.com",
+          databaseURL: "https://tank-game-f0c38-default-rtdb.firebaseio.com",
+          projectId: "tank-game-f0c38",
+          storageBucket: "tank-game-f0c38.firebasestorage.app",
+          messagingSenderId: "316673219546",
+          appId: "1:316673219546:web:6012f3a5b4c662e2a8bee3"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+            if (type === 'shoot') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2); osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'hitCorrect') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.4); osc.start(now); osc.stop(now + 0.4);
+            } else if (type === 'hitWrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3);
+            }
+        }
+
+        const wordsList = [
+            { text: 'وضو', isCorrect: true }, { text: 'رضا', isCorrect: true }, { text: 'لزیز', isCorrect: false },
+            { text: 'راضی', isCorrect: true }, { text: 'زرّت', isCorrect: false }, { text: 'حوض', isCorrect: true },
+            { text: 'حزرت', isCorrect: false }, { text: 'بعزی', isCorrect: false }, { text: 'ذرّه بین', isCorrect: true },
+            { text: 'مریز', isCorrect: false }, { text: 'زرد آلو', isCorrect: true }, { text: 'حضرت', isCorrect: true },
+            { text: 'نارازی', isCorrect: false }
+        ];
+
+        let playerName = ''; let score = 0; let currentWordIndex = 0; 
+        let activeUFOs = []; let globalGameLoop; let barrelAngle = 0;
+
+        const barrelEl = document.getElementById('tank-barrel');
+        const gameArea = document.getElementById('game-area');
+        const scoreEl = document.getElementById('score');
+
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function startGame() {
+            playerName = document.getElementById('player-name').value || 'قهرمان';
+            score = 0; currentWordIndex = 0; activeUFOs = [];
+            scoreEl.innerText = score.toLocaleString('fa-IR');
+            gameArea.innerHTML = '';
+            switchScreen('screen-game');
+            spawnUFO();
+            cancelAnimationFrame(globalGameLoop);
+            globalGameLoop = requestAnimationFrame(updateGame);
+        }
+
+        function spawnUFO() {
+            if (currentWordIndex >= wordsList.length) return;
+            const wordData = wordsList[currentWordIndex];
+            const ufoEl = document.createElement('div');
+            ufoEl.className = 'ufo';
+            ufoEl.innerHTML = `<div class="ufo-emoji">🛸</div><div class="ufo-word">${wordData.text}</div>`;
+            
+            let ufoObj = {
+                el: ufoEl,
+                x: Math.random() * (window.innerWidth - 120) + 60,
+                y: window.innerHeight,
+                isCorrect: wordData.isCorrect,
+                spawnedNext: false
+            };
+            
+            ufoEl.style.left = ufoObj.x + 'px'; ufoEl.style.top = ufoObj.y + 'px';
+            gameArea.appendChild(ufoEl);
+            activeUFOs.push(ufoObj);
+            currentWordIndex++;
+        }
+
+        function updateGame() {
+            for (let i = activeUFOs.length - 1; i >= 0; i--) {
+                let ufo = activeUFOs[i];
+                ufo.y -= 0.7; // سرعت بالا آمدن سفینه
+                ufo.el.style.top = ufo.y + 'px';
+
+                // وقتی سفینه به وسط صفحه رسید، بعدی رو بیار
+                if (ufo.y < window.innerHeight / 2 && !ufo.spawnedNext) {
+                    ufo.spawnedNext = true;
+                    spawnUFO();
+                }
+
+                if (ufo.y < -100) {
+                    ufo.el.remove();
+                    activeUFOs.splice(i, 1);
+                    if (!ufo.spawnedNext) spawnUFO(); // اطمینان از متوقف نشدن بازی
+                }
+            }
+
+            if (currentWordIndex >= wordsList.length && activeUFOs.length === 0) {
+                endGame(); return;
+            }
+
+            globalGameLoop = requestAnimationFrame(updateGame);
+        }
+
+        function aimTank(e) {
+            if (e.target.tagName === 'BUTTON') return;
+            const rect = document.querySelector('.tank-turret-base').getBoundingClientRect();
+            const tankCenterX = rect.left + rect.width / 2;
+            const tankCenterY = rect.top + rect.height;
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let angle = Math.atan2(clientX - tankCenterX, tankCenterY - clientY) * (180 / Math.PI);
+            if (angle > 90) angle = 90; if (angle < -90) angle = -90;
+            barrelAngle = angle; barrelEl.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+        }
+
+        function fireBullet() {
+            if(activeUFOs.length === 0) return;
+            playSound('shoot');
+
+            const bullet = document.createElement('div');
+            bullet.className = 'bullet';
+            const rect = document.querySelector('.tank-turret-base').getBoundingClientRect();
+            const startX = rect.left + rect.width / 2; const startY = rect.top;
+
+            bullet.style.left = startX + 'px'; bullet.style.top = startY + 'px';
+            gameArea.appendChild(bullet);
+
+            const rad = barrelAngle * (Math.PI / 180);
+            const speed = 15; let bx = startX; let by = startY;
+
+            function moveBullet() {
+                bx += Math.sin(rad) * speed; by -= Math.cos(rad) * speed;
+                bullet.style.left = bx + 'px'; bullet.style.top = by + 'px';
+
+                for (let i = 0; i < activeUFOs.length; i++) {
+                    let ufo = activeUFOs[i];
+                    let ufoRect = ufo.el.getBoundingClientRect();
+                    if (bx > ufoRect.left && bx < ufoRect.right && by > ufoRect.top && by < ufoRect.bottom) {
+                        bullet.remove(); handleHit(ufo, i); return;
+                    }
+                }
+
+                if (by < 0 || bx < 0 || bx > window.innerWidth) { bullet.remove(); return; }
+                requestAnimationFrame(moveBullet);
+            }
+            requestAnimationFrame(moveBullet);
+        }
+
+        function handleHit(ufo, index) {
+            const isCorrect = ufo.isCorrect;
+            const rect = ufo.el.getBoundingClientRect();
+            const hitX = rect.left + rect.width/2; const hitY = rect.top + rect.height/2;
+
+            if (isCorrect) {
+                playSound('hitCorrect'); score += 10;
+                createStarExplosion(hitX, hitY, true);
+                showFeedback('+۱۰ آفرین!', hitX - 30, hitY - 30, '#00ff00');
+            } else {
+                playSound('hitWrong'); score -= 5;
+                createStarExplosion(hitX, hitY, false);
+                showFeedback('-۵ خطا!', hitX - 30, hitY - 30, '#ff3333');
+            }
+            
+            scoreEl.innerText = score.toLocaleString('fa-IR');
+            ufo.el.remove();
+            activeUFOs.splice(index, 1);
+            
+            // اگر سفینه نابود شده هنوز سفینه بعدی را ظاهر نکرده بود، فوراً ظاهر کن
+            if (!ufo.spawnedNext) setTimeout(spawnUFO, 300);
+        }
+
+        function createStarExplosion(x, y, isCorrect) {
+            const colors = isCorrect ? ['#ffff00', '#ffaa00', '#ffffff', '#00ff00'] : ['#ff0000', '#ff5555', '#333333'];
+            const symbols = isCorrect ? ['⭐', '✨', '🌟'] : ['❌', '💥', '💨'];
+            
+            for(let i=0; i<20; i++) {
+                const p = document.createElement('div');
+                p.className = 'star-particle';
+                p.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+                p.style.color = colors[Math.floor(Math.random() * colors.length)];
+                p.style.left = x + 'px'; p.style.top = y + 'px';
+                gameArea.appendChild(p);
+
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 12 + 6; // پرتاب محکم
+                let px = x; let py = y; let alpha = 1;
+
+                function animP() {
+                    px += Math.cos(angle) * speed; py += Math.sin(angle) * speed;
+                    alpha -= 0.03;
+                    p.style.left = px + 'px'; p.style.top = py + 'px'; 
+                    p.style.opacity = alpha; p.style.transform = `scale(${alpha + 0.5})`;
+                    if(alpha > 0) requestAnimationFrame(animP); else p.remove();
+                }
+                requestAnimationFrame(animP);
+            }
+        }
+
+        function showFeedback(text, x, y, color) {
+            const msg = document.createElement('div');
+            msg.className = 'feedback-msg'; msg.innerText = text; msg.style.color = color;
+            msg.style.left = x + 'px'; msg.style.top = y + 'px';
+            gameArea.appendChild(msg); setTimeout(() => msg.remove(), 1000);
+        }
+
+        function endGame() {
+            switchScreen('screen-end');
+            const msgEl = document.getElementById('final-message');
+            if(score > 50) msgEl.innerText = `عالی بود ${playerName}! تو یک قهرمانی! امتیاز تو: ${score.toLocaleString('fa-IR')}`;
+            else msgEl.innerText = `خوب بود ${playerName}! می‌تونی بازم تمرین کنی. امتیاز تو: ${score.toLocaleString('fa-IR')}`;
+            createBubbles();
+
+            // ذخیره نتیجه در Firebase
+            database.ref("tankGameResults").push({
+                name: playerName,
+                score: score,
+                date: new Date().toLocaleString("fa-IR")
+            }).then(() => {
+                msgEl.innerText += "\n\n✅ اطلاعات بازی ذخیره شد";
+            }).catch((error) => {
+                console.error("Firebase Error:", error);
+                msgEl.innerText += "\n\n❌ ذخیره اطلاعات انجام نشد";
+            });
+        }
+
+        function resetGame() {
+            switchScreen('screen-welcome');
+            document.getElementById('bubbles-container').innerHTML = '';
+        }
+
+        function createBubbles() {
+            const container = document.getElementById('bubbles-container');
+            for(let i=0; i<20; i++) {
+                const b = document.createElement('div'); b.className = 'bubble';
+                b.style.width = Math.random() * 40 + 10 + 'px'; b.style.height = b.style.width;
+                b.style.left = Math.random() * 100 + 'vw';
+                b.style.animationDuration = Math.random() * 5 + 3 + 's';
+                b.style.animationDelay = Math.random() * 2 + 's';
+                container.appendChild(b);
+            }
+        }
+    </script>
+</body>
+</html>
