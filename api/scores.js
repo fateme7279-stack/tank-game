@@ -6,13 +6,20 @@ module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   try {
     if (req.method === "GET") {
-      const url = `${DB}/scores.json?orderBy=${encodeURIComponent('"score"')}&limitToLast=10`;
-      const r = await fetch(url);
-      if (!r.ok) return res.status(502).json({ error: "firebase_read_failed", status: r.status });
+      // تلاش اول: خواندن ۱۰ امتیاز برتر با کوئری (نیاز به .indexOn در Rules دارد)
+      let r = await fetch(`${DB}/scores.json?orderBy=${encodeURIComponent('"score"')}&limitToLast=10`);
+      // تلاش دوم: اگر ایندکس تعریف نشده بود، همه را بخوان و خودمان مرتب کنیم
+      if (!r.ok) r = await fetch(`${DB}/scores.json`);
+      if (!r.ok) {
+        const detail = (await r.text()).slice(0, 200);
+        return res.status(502).json({ error: "firebase_read_failed", status: r.status, detail });
+      }
       const data = (await r.json()) || {};
       const rows = Object.entries(data)
-        .map(([key, v]) => ({ key, name: String(v.name || ""), score: Number(v.score) }))
-        .sort((a, b) => b.score - a.score);
+        .map(([key, v]) => ({ key, name: String((v && v.name) || ""), score: Number(v && v.score) }))
+        .filter(x => Number.isFinite(x.score))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
       return res.status(200).json(rows);
     }
 
