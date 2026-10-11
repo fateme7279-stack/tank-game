@@ -26,18 +26,33 @@ module.exports = async (req, res) => {
     if (req.method === "POST") {
       let body = req.body;
       if (typeof body === "string") body = JSON.parse(body);
-      const name = String((body && body.name) || "").trim().slice(0, 20) || "قهرمان";
-      const score = Number(body && body.score);
+      body = body || {};
+      const name = String(body.name || "").trim().slice(0, 20) || "قهرمان";
+      const grade = String(body.grade || "").trim();
+      const school = String(body.school || "").trim().slice(0, 40);
+      const score = Number(body.score);
+      const GRADES = ["اول", "دوم", "سوم", "چهارم", "پنجم", "ششم"];
       if (!Number.isInteger(score) || score < -30 || score > 70) {
         return res.status(400).json({ error: "invalid_score" });
       }
-      const r = await fetch(`${DB}/scores.json`, {
+      if (!GRADES.includes(grade) || !school) {
+        return res.status(400).json({ error: "invalid_grade_or_school" });
+      }
+      const post = (path, data) => fetch(`${DB}/${path}.json`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, score, createdAt: { ".sv": "timestamp" } }),
+        body: JSON.stringify(data),
       });
-      if (!r.ok) return res.status(502).json({ error: "firebase_write_failed", status: r.status });
-      const out = await r.json(); // { name: "-Nabc..." }
+      const createdAt = { ".sv": "timestamp" };
+
+      // اطلاعات کامل (نام، پایه، مدرسه، امتیاز): خصوصی، فقط از کنسول Firebase دیده می‌شود
+      const rp = await post("players", { name, grade, school, score, createdAt });
+      if (!rp.ok) return res.status(502).json({ error: "firebase_write_failed", where: "players", status: rp.status });
+
+      // فقط نام و امتیاز: عمومی، برای جدول برترین‌ها
+      const rs = await post("scores", { name, score, createdAt });
+      if (!rs.ok) return res.status(502).json({ error: "firebase_write_failed", where: "scores", status: rs.status });
+      const out = await rs.json(); // { name: "-Nabc..." }
       return res.status(200).json({ key: out.name });
     }
 
