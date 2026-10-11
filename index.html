@@ -495,7 +495,7 @@
                     renderLeaderboard(await api({ method: 'GET' }), myKey);
                 } catch (err) {
                     console.error('خطا در خواندن جدول:', err);
-                    showMessage('امتیاز ذخیره شد، اما جدول بارگذاری نشد.');
+                    showMessage('امتیاز ذخیره شد، اما جدول بارگذاری نشد. (' + err.message + ')');
                 }
             };
         })();
