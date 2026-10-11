@@ -64,6 +64,13 @@
             padding: 10px; font-size: 1.2rem; border: 2px solid #4facfe; border-radius: 10px; text-align: center; margin-bottom: 15px; width: 100%; font-family: 'Vazirmatn';
         }
         
+        .welcome-box { max-height: 95vh; overflow-y: auto; }
+        .welcome-box select {
+            padding: 10px; font-size: 1.2rem; border: 2px solid #4facfe; border-radius: 10px; text-align: center; text-align-last: center;
+            margin-bottom: 15px; width: 100%; font-family: 'Vazirmatn'; background: #fff; color: #333;
+        }
+        .form-error { color: #d63031; font-size: 1rem; min-height: 1.4em; margin-bottom: 8px; }
+
         button {
             padding: 12px 30px; font-size: 1.3rem; border: none; border-radius: 15px; cursor: pointer;
             background: linear-gradient(to right, #ff5e62, #ff9966);
@@ -166,8 +173,14 @@
         <div class="welcome-box">
             <h1>ماجراجویی من و تانک</h1>
             <p>طراح وآموزگار: فاطمه محمدپور</p>
-            <input type="text" id="player-name" placeholder="نام خود را وارد کن..." autocomplete="off">
-            <br>
+            <input type="text" id="player-name" placeholder="نام خود را وارد کن..." autocomplete="off" maxlength="20">
+            <select id="player-grade">
+                <option value="">پایه تحصیلی را انتخاب کن...</option>
+                <option>اول</option><option>دوم</option><option>سوم</option>
+                <option>چهارم</option><option>پنجم</option><option>ششم</option>
+            </select>
+            <input type="text" id="player-school" placeholder="نام مدرسه را وارد کن..." autocomplete="off" maxlength="40">
+            <div id="form-error" class="form-error"></div>
             <button onclick="startGame()">شروع ماجراجویی 🚀</button>
         </div>
     </div>
@@ -234,7 +247,7 @@
             { text: 'نارازی', isCorrect: false }
         ];
 
-        let playerName = ''; let score = 0; let currentWordIndex = 0; 
+        let playerName = ''; let playerGrade = ''; let playerSchool = ''; let score = 0; let currentWordIndex = 0; 
         let activeUFOs = []; let globalGameLoop; let barrelAngle = 0;
 
         const barrelEl = document.getElementById('tank-barrel');
@@ -247,7 +260,16 @@
         }
 
         function startGame() {
-            playerName = document.getElementById('player-name').value || 'قهرمان';
+            const nameVal = document.getElementById('player-name').value.trim();
+            const gradeVal = document.getElementById('player-grade').value;
+            const schoolVal = document.getElementById('player-school').value.trim();
+            const errEl = document.getElementById('form-error');
+            if (!nameVal || !gradeVal || !schoolVal) {
+                errEl.textContent = 'لطفاً نام، پایه و نام مدرسه را کامل وارد کن.';
+                return;
+            }
+            errEl.textContent = '';
+            playerName = nameVal; playerGrade = gradeVal; playerSchool = schoolVal;
             score = 0; currentWordIndex = 0; activeUFOs = [];
             scoreEl.innerText = score.toLocaleString('fa-IR');
             gameArea.innerHTML = '';
@@ -415,12 +437,13 @@
 
             // ذخیره نام و امتیاز در Firebase و نمایش جدول برترین‌ها
             document.getElementById('leaderboard-list').innerHTML = '<div class="lb-msg">در حال بارگذاری...</div>';
-            if (window.fbSaveScore) window.fbSaveScore(playerName, score);
+            if (window.fbSaveScore) window.fbSaveScore(playerName, score, playerGrade, playerSchool);
             else document.getElementById('leaderboard-list').innerHTML = '<div class="lb-msg">اتصال به جدول امتیازات برقرار نشد.</div>';
         }
 
         function resetGame() {
             switchScreen('screen-welcome');
+            document.getElementById('player-name').value = '';
             document.getElementById('bubbles-container').innerHTML = '';
         }
 
@@ -477,13 +500,13 @@
                 } finally { clearTimeout(t); }
             }
 
-            window.fbSaveScore = async function (name, score) {
+            window.fbSaveScore = async function (name, score, grade, school) {
                 let myKey = null;
                 try {
                     const out = await api({
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: String(name), score: Number(score) })
+                        body: JSON.stringify({ name: String(name), score: Number(score), grade: String(grade), school: String(school) })
                     });
                     myKey = out.key;
                 } catch (err) {
